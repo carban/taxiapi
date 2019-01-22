@@ -8,10 +8,10 @@ const cors = require('cors');
 Router.use(cors());
 
 Router.post('/api/profile', async (req, res) => {
-  const {id_serial} = req.body;
+  const {phone} = req.body;
   const myquery = {
-    text: 'SELECT first_name, last_name, phone FROM client WHERE id_serial=$1',
-    values: [id_serial]
+    text: 'SELECT first_name, last_name, phone, email, credit_card FROM client WHERE phone=$1',
+    values: [phone]
   }
   await db.query(myquery)
     .then(dbres => {
@@ -23,11 +23,11 @@ Router.post('/api/profile', async (req, res) => {
 });
 
 Router.post('/api/profile/favorites', async (req, res) => {
-  const {id_serial} = req.body;
+  const {phone} = req.body;
   const myquery = {
 
-    text: 'SELECT favid, title, (select ST_AsGeoJSON(coor)::json) as geom FROM client NATURAL JOIN favorites where id_serial = $1',
-    values: [id_serial]
+    text: 'SELECT favid, title, (select ST_AsGeoJSON(coor)::json) as geom FROM client NATURAL JOIN favorites where phone = $1',
+    values: [phone]
   }
   await db.query(myquery)
     .then(dbres => {
@@ -39,7 +39,7 @@ Router.post('/api/profile/favorites', async (req, res) => {
 });
 
 Router.post('/api/profile/new-favorite', async (req, res) => {
-  const {f_item, phone, id_serial} = req.body;
+  const {f_item, phone} = req.body;
   const myquery = {
     text: 'INSERT INTO favorites (phone, title, coor) VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 3725))',
     values: [phone, f_item.title, f_item.coor[0], f_item.coor[1]]
@@ -54,7 +54,7 @@ Router.post('/api/profile/new-favorite', async (req, res) => {
 });
 
 Router.post('/api/profile/delete-favorite', async (req, res) => {
-  const {fav, id_serial} = req.body;
+  const {fav, phone} = req.body;
   const myquery = {
     text: 'DELETE FROM favorites WHERE favid=$1',
     values: [fav]
@@ -69,7 +69,7 @@ Router.post('/api/profile/delete-favorite', async (req, res) => {
 });
 
 Router.post('/api/profile/update-favorite', async (req, res) => {
-  const {fav, id_serial, newTitle} = req.body;
+  const {fav, phone, newTitle} = req.body;
   const myquery = {
     text: 'UPDATE favorites SET title=$1 WHERE favid=$2',
     values: [newTitle, fav]
