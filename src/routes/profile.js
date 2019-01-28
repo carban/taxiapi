@@ -22,6 +22,22 @@ Router.post('/api/profile', async (req, res) => {
     })
 });
 
+Router.post('/api/update-profile', async (req, res) => {
+  const {newProfile, phone} = req.body;
+  const myquery = {
+    text: 'UPDATE client SET first_name=$1, last_name=$2, email=$3, credit_card=$4 WHERE phone=$5',
+    values: [newProfile.first_name, newProfile.last_name, newProfile.email, newProfile.credit_card, phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      console.log('Profile Updated');
+      res.json({msg: 'Profile Updated'});
+    })
+    .catch(err => {
+       console.log();
+    })
+});
+
 Router.post('/api/profile/favorites', async (req, res) => {
   const {phone} = req.body;
   const myquery = {
