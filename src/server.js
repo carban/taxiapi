@@ -17,6 +17,7 @@ app.use(express.urlencoded({extended: false}));
 app.use(require('./routes/index.js'));
 app.use(require('./routes/map.js'));
 app.use(require('./routes/profile.js'));
+app.use(require('./routes/service.js'));
 
 //global variables
 

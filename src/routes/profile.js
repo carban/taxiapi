@@ -57,7 +57,7 @@ Router.post('/api/profile/favorites', async (req, res) => {
 Router.post('/api/profile/new-favorite', async (req, res) => {
   const {f_item, phone} = req.body;
   const myquery = {
-    text: 'INSERT INTO favorites (phone, title, coor) VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 3725))',
+    text: 'INSERT INTO favorites (phone, title, coor) VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326))',
     values: [phone, f_item.title, f_item.coor[0], f_item.coor[1]]
   }
   await db.query(myquery)
