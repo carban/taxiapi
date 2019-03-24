@@ -10,7 +10,7 @@ Router.use(cors());
 Router.post('/api/profile', async (req, res) => {
   const {phone} = req.body;
   const myquery = {
-    text: 'SELECT first_name, last_name, phone, email, credit_card FROM client WHERE phone=$1',
+    text: 'SELECT first_name, last_name, phone, email, credit_card, image FROM client WHERE phone=$1',
     values: [phone]
   }
   await db.query(myquery)
