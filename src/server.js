@@ -18,6 +18,7 @@ app.use(require('./routes/index.js'));
 app.use(require('./routes/map.js'));
 app.use(require('./routes/profile.js'));
 app.use(require('./routes/service.js'));
+app.use(require('./routes/driver.js'));
 
 //global variables
 
