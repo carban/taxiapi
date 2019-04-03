@@ -47,4 +47,19 @@ Router.post('/api/driver/loginDriver', async (req, res) => {
     //console.log(errors);
 });
 
+Router.post('/api/driver/profile', async (req, res) => {
+  const {phone} = req.body;
+  const myquery = {
+    text: 'SELECT first_name, last_name, phone FROM drivers WHERE phone=$1',
+    values: [phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.json(dbres.rows[0]);
+    })
+    .catch(err => {
+
+    })
+});
+
 module.exports = Router;

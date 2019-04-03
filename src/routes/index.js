@@ -12,10 +12,11 @@ Router.use(cors());
 
 Router.post('/api/signup', async (req, res) => {
 
-  const {fname, lname, phone, email, credit_card, password, passConf} = req.body;
+  const {fname, lname, phone, email, credit_card, direction, password, passConf} = req.body;
+  console.log(phone);
   var errors = [];
 
-  if (fname==null || lname==null || phone==null || password==null || passConf==null || email==null || credit_card==null) {
+  if (fname==null || lname==null || phone==null || password==null || passConf==null || email==null || credit_card==null || direction==null) {
     errors.push({text: 'Please write all inputs'});
   }
 
@@ -29,7 +30,7 @@ Router.post('/api/signup', async (req, res) => {
   }else {
     //CHECK IF PHONE EXIST ON DB/////////////////////////////////////////////////////////
     const myquery ={
-      text: 'SELECT phone FROM client WHERE phone=$1',
+      text: 'SELECT telefonocliente FROM cliente WHERE telefonocliente=$1',
       values: [phone]
     }
     await db.query(myquery)
@@ -40,8 +41,8 @@ Router.post('/api/signup', async (req, res) => {
         res.status(400).json({errors});
       }else{
         const myquery2 ={
-          text: 'INSERT INTO client(first_name, last_name, phone, password, email, credit_card) values($1, $2, $3, $4, $5, $6)',
-          values: [fname, lname, phone, password, email, credit_card]
+          text: 'INSERT INTO cliente (telefonocliente, nombrecliente, apellidocliente, emailcliente, tarjetacliente, direccioncliente, passwordcliente) values($1, $2, $3, $4, $5, $6, $7)',
+          values: [phone, fname, lname, email, credit_card, direction, password]
         }
         db.query(myquery2)
         .then(dbres => {
@@ -76,17 +77,17 @@ Router.post('/api/login', async (req, res) => {
   //CHECK IF PHONE EXIST ON DB
   const myquery ={
     // text: 'SELECT password, id_serial FROM client WHERE phone=$1',
-    text: 'SELECT password, phone FROM client WHERE phone=$1',
+    text: 'SELECT passwordcliente, telefonocliente FROM cliente WHERE telefonocliente=$1',
     values: [phone]
   }
   await db.query(myquery)
   .then(dbres => {
     if (dbres.rows.length>0) {
-      if (password==dbres.rows[0].password) {
+      if (password==dbres.rows[0].passwordcliente) {
         const obj_user = dbres.rows[0];
         console.log(obj_user);
         // const token = jwt.sign({id_serial: obj_user.id_serial}, 'aSuperSecretKey');
-        const token = jwt.sign({phone: obj_user.phone}, 'aSuperSecretKey');
+        const token = jwt.sign({phone: obj_user.telefonocliente}, 'aSuperSecretKey');
         console.log('LOGUEADO');
         res.status(200).json(token);
       }else{
@@ -96,6 +97,8 @@ Router.post('/api/login', async (req, res) => {
     }else{
       errors.push({text: 'The phone '+phone+' DOESNT Exists in our DB'});
       res.status(403).json({errors});
+
+
     }
   })
   .catch(error => {

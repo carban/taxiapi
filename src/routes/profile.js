@@ -10,7 +10,7 @@ Router.use(cors());
 Router.post('/api/profile', async (req, res) => {
   const {phone} = req.body;
   const myquery = {
-    text: 'SELECT first_name, last_name, phone, email, credit_card, image FROM client WHERE phone=$1',
+    text: 'SELECT * FROM cliente WHERE telefonocliente=$1',
     values: [phone]
   }
   await db.query(myquery)
@@ -25,8 +25,8 @@ Router.post('/api/profile', async (req, res) => {
 Router.post('/api/update-profile', async (req, res) => {
   const {newProfile, phone} = req.body;
   const myquery = {
-    text: 'UPDATE client SET first_name=$1, last_name=$2, email=$3, credit_card=$4 WHERE phone=$5',
-    values: [newProfile.first_name, newProfile.last_name, newProfile.email, newProfile.credit_card, phone]
+    text: 'UPDATE cliente SET nombrecliente=$1, apellidocliente=$2, emailcliente=$3, direccioncliente=$4, tarjetacliente=$5 WHERE telefonocliente=$6',
+    values: [newProfile.nombrecliente, newProfile.apellidocliente, newProfile.emailcliente, newProfile.direccioncliente, newProfile.tarjetacliente, phone]
   }
   await db.query(myquery)
     .then(dbres => {
@@ -42,7 +42,7 @@ Router.post('/api/profile/favorites', async (req, res) => {
   const {phone} = req.body;
   const myquery = {
 
-    text: 'SELECT favid, title, (select ST_AsGeoJSON(coor)::json) as geom FROM client NATURAL JOIN favorites where phone = $1',
+    text: 'SELECT id_favorito, titulo, (select ST_AsGeoJSON(coordenada)::json) as geom FROM cliente NATURAL JOIN favorito where telefonocliente = $1 ORDER BY id_favorito',
     values: [phone]
   }
   await db.query(myquery)
@@ -57,8 +57,8 @@ Router.post('/api/profile/favorites', async (req, res) => {
 Router.post('/api/profile/new-favorite', async (req, res) => {
   const {f_item, phone} = req.body;
   const myquery = {
-    text: 'INSERT INTO favorites (phone, title, coor) VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326))',
-    values: [phone, f_item.title, f_item.coor[0], f_item.coor[1]]
+    text: 'INSERT INTO favorito (telefonoCliente, titulo, direccion, coordenada) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326))',
+    values: [phone, f_item.title, "NoDirection", f_item.coor[0], f_item.coor[1]]
   }
   await db.query(myquery)
     .then(dbres => {
@@ -72,7 +72,7 @@ Router.post('/api/profile/new-favorite', async (req, res) => {
 Router.post('/api/profile/delete-favorite', async (req, res) => {
   const {fav, phone} = req.body;
   const myquery = {
-    text: 'DELETE FROM favorites WHERE favid=$1',
+    text: 'DELETE FROM favorito WHERE id_favorito=$1',
     values: [fav]
   }
   await db.query(myquery)
@@ -87,7 +87,7 @@ Router.post('/api/profile/delete-favorite', async (req, res) => {
 Router.post('/api/profile/update-favorite', async (req, res) => {
   const {fav, phone, newTitle} = req.body;
   const myquery = {
-    text: 'UPDATE favorites SET title=$1 WHERE favid=$2',
+    text: 'UPDATE favorito SET titulo=$1 WHERE id_favorito=$2',
     values: [newTitle, fav]
   }
   await db.query(myquery)
