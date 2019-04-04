@@ -3,7 +3,7 @@ const Router = express.Router();
 const db = require('../config/db.js');
 
 
-Router.post('/api/service', async (req, res) => {
+Router.post('/api/near-taxi', async (req, res) => {
 
   const {coordenada} = req.body;
   const myquery = {

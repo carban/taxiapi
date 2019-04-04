@@ -113,7 +113,7 @@ SELECT AddGeometryColumn('variante_conduce', 'coordenada', 4326, 'POINT', 2);
 
 
 CREATE TABLE horario(
-jornada varchar(6) NOT NULL, --manhana, tarde, noche
+jornada varchar(10) NOT NULL, --manhana, tarde, noche
 horaInicio time NOT NULL UNIQUE,
 horaFin time NOT NULL UNIQUE,
 
@@ -123,7 +123,7 @@ PRIMARY KEY (jornada)
 CREATE sequence id_tarifa_seq MINVALUE 900 START 900;
 CREATE TABLE tarifa(
 id_tarifa int DEFAULT nextval('id_tarifa_seq') ,
-jornada varchar(6) NOT NULL,
+jornada varchar(10) NOT NULL,
 precioKm double precision NOT NULL,
 fechaInicio date NOT NULL,
 fechaFin date,
@@ -238,11 +238,76 @@ INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coo
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4491 -76.5428)', 4326));
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4696 -76.5151)', 4326));
 
+INSERT INTO horario (jornada, horainicio, horafin) VALUES ('manhana', '04:00:00', '11:59:59');
+INSERT INTO horario (jornada, horainicio, horafin) VALUES ('tarde', '12:00:00', '19:59:59');
+INSERT INTO horario (jornada, horainicio, horafin) VALUES ('noche', '20:00:00', '03:59:59');
+
+INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('manhana', 10000, '01/01/2018', '01/01/2019');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('tarde', 20000, '01/01/2018', '01/01/2019');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('noche', 30000, '01/01/2018', '01/01/2019');
+
+INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('manhana', 10000, '01/01/2019', '01/01/2020');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('tarde', 20000, '01/01/2019', '01/01/2020');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('noche', 30000, '01/01/2019', '01/01/2020');
 
 
 
+CREATE OR REPLACE FUNCTION insertarTaxi (VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) RETURNS VOID AS $$
+DECLARE
+itelefonoconductor ALIAS FOR $1;
+iplaca ALIAS FOR $2;
+isoat ALIAS FOR $3;
+ianho ALIAS FOR $4;
+imarca ALIAS FOR $5;
+imodelo ALIAS FOR $6;
+
+idcar INTEGER;
+mark VARCHAR;
+model VARCHAR;
+BEGIN
+
+SELECT id_carro, marca, modelo INTO idcar, mark, model FROM infocarro WHERE marca = imarca and modelo = imodelo;
+
+IF (idcar is null) THEN
+       INSERT INTO infoCarro (marca, modelo) VALUES (imarca,imodelo);
+       SELECT id_carro INTO idcar FROM infocarro WHERE marca = imarca and modelo = imodelo;
+       INSERT INTO taxi (placa, id_carro ,soat, anho) VALUES (iplaca,idcar,isoat,ianho);
+       INSERT INTO taxiConductor (telefonoConductor, placa) VALUES(itelefonoconductor,iplaca);
+ELSE
+       INSERT INTO taxi (placa, id_carro ,soat, anho) VALUES (iplaca,idcar,isoat,ianho);
+       INSERT INTO taxiConductor (telefonoConductor, placa) VALUES(itelefonoconductor,iplaca);
+
+END IF;
+
+END; $$ 
+LANGUAGE 'plpgsql';
+
+CREATE OR REPLACE FUNCTION borrarTaxi (VARCHAR, VARCHAR) RETURNS VOID AS $$
+DECLARE
+itelefonoconductor ALIAS FOR $1;
+iplaca ALIAS FOR $2;
+BEGIN
+DELETE FROM taxiconductor WHERE placa = iplaca and telefonoconductor = itelefonoconductor;
+/*SE BORRA EL TAXI DE LA TABLA TAXI??????????????*/
+END; $$ 
+LANGUAGE 'plpgsql';
+
+--select * from tarifa where current_date < fechafin;  TARIFAS DEL ANHO VIGENTE
 
 
+CREATE OR REPLACE FUNCTION mitarifa (time) RETURNS INTEGER AS $$
+DECLARE
+time ALIAS FOR $1;
+id INTEGER;
+BEGIN
+IF time >= '06:00:00' and time <= '17:59:59' THEN
+       id := (select id_tarifa from tarifa natural join horario where current_date < fechafin and (time<=horafin and time>=horainicio)) ;
+ELSE
+       id := (select id_tarifa from tarifa natural join horario where current_date < fechafin and (current_time >= '18:00:00' and horafin <= '05:59:59'));
+END IF;
+       RETURN id;
+END; $$ 
+LANGUAGE 'plpgsql';
 
 
 
