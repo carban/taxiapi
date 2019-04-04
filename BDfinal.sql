@@ -1,5 +1,5 @@
 /*SCRIPT SQL PARA EL PROYECTO DB1*/
-/*VERSION 1,1*/
+/*VERSION 1,3*/
 
 /*Integridad referencial*/
 
@@ -182,7 +182,7 @@ VALUES ('1234','nombre','apellido','mail@mail.com','111111', '1234', 'unaDirecci
 INSERT INTO conductor VALUES ('66666','Quentin','Tarantino','quentin@tarantino.com','123456','pulp123','unaDireccion');
 INSERT INTO conductor VALUES ('10101','Alejandro', 'González I.','mail@mail.com','654321','21grams','unaDireccion');
 INSERT INTO conductor VALUES ('77711','Lars','Von Trier', 'von@trier.com','67890','dogville','unaDireccion');
-INSERT INTO conductor VALUES ('123123','Martin','Scoces', 'martin@scoces.com','666899','123','unaDireccion');
+INSERT INTO conductor VALUES ('123123','Martin','Scorsese', 'martin@scoces.com','666899','123','unaDireccion');
 
 
 --Insert into infoCarro
@@ -230,7 +230,6 @@ INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coo
 --INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada); VALUES ('66666','maz123','2019/04/01','13:00:59','en uso',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326)); No puede usar dos carros al mismo tiempo
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123','2019/04/01','14:00:59','disponible',ST_GeomFromText('POINT(3.4446 -76.5208)', 4326));
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234','2019/04/01','13:00:59','disponible',ST_GeomFromText('POINT(3.4356 -76.5208)', 4326));
-
 --fecha y hora actual
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('1234','abc123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4123 -76.4941)', 4326));
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4406 -76.5208)', 4326));
@@ -238,21 +237,59 @@ INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coo
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4491 -76.5428)', 4326));
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4696 -76.5151)', 4326));
 
+
+--Insert into horario
 INSERT INTO horario (jornada, horainicio, horafin) VALUES ('manhana', '04:00:00', '11:59:59');
 INSERT INTO horario (jornada, horainicio, horafin) VALUES ('tarde', '12:00:00', '19:59:59');
 INSERT INTO horario (jornada, horainicio, horafin) VALUES ('noche', '20:00:00', '03:59:59');
 
-INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('manhana', 10000, '01/01/2018', '01/01/2019');
-INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('tarde', 20000, '01/01/2018', '01/01/2019');
-INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('noche', 30000, '01/01/2018', '01/01/2019');
 
-INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('manhana', 10000, '01/01/2019', '01/01/2020');
-INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('tarde', 20000, '01/01/2019', '01/01/2020');
-INSERT INTO tarifa (jornada, precioKm, fechaInicio, fechaFin) VALUES ('noche', 30000, '01/01/2019', '01/01/2020');
+--Insert into tarifa --id_tarifa es auto incrementado (no se pasa como parametro)
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1500, '01/01/2018'); --fechaFin es calculada con una nueva tupla de misma jornada
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2500, '01/01/2018');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3500, '01/01/2018');
+
+/* para probar el trigger 
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1000, '01/01/2019');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2000, '01/01/2019');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3000, '01/01/2019');
+*/
 
 
 
-CREATE OR REPLACE FUNCTION insertarTaxi (VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) RETURNS VOID AS $$
+/*Triggers y Procedimientos almacenados***************************************/
+CREATE OR REPLACE FUNCTION ultimaFechaFin () RETURNS TRIGGER AS
+$$
+DECLARE
+ifechaInicio date;
+
+BEGIN
+--ultima fechaInicio: 
+SELECT fechaInicio INTO ifechaInicio FROM tarifa WHERE jornada= new.jornada ORDER BY id_tarifa DESC LIMIT 1;
+
+     IF(ifechaInicio < new.fechaInicio) THEN
+	UPDATE tarifa SET fechaFin= new.fechaInicio WHERE id_tarifa IN (SELECT MAX(id_tarifa) FROM tarifa WHERE jornada= new.jornada); --ORDER BY id_tarifa ASC LIMIT 1;
+	RETURN NEW;
+
+     ELSE 
+	 RAISE NOTICE 'La fecha de inicio (%) que esta tratando de ingresar es menor a la fecha anterior (%)', new.fechaInicio, ifechaInicio;
+     END IF;
+END;
+$$
+LANGUAGE 'plpgsql';
+
+DROP TRIGGER IF EXISTS updateFechaFin ON tarifa;
+
+CREATE TRIGGER updateFechaFin BEFORE INSERT ON tarifa
+FOR EACH ROW EXECUTE PROCEDURE ultimaFechaFin();
+
+-- INSERSIONES QUE HACEN USO DEL TRIGGER
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1000, '01/01/2019');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2000, '01/01/2019');
+INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3000, '01/01/2019');
+
+CREATE OR REPLACE FUNCTION insertarTaxiConductor (VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) RETURNS VOID AS 
+$$
 DECLARE
 itelefonoconductor ALIAS FOR $1;
 iplaca ALIAS FOR $2;
@@ -279,8 +316,11 @@ ELSE
 
 END IF;
 
-END; $$ 
+END; 
+$$ 
 LANGUAGE 'plpgsql';
+
+
 
 CREATE OR REPLACE FUNCTION borrarTaxi (VARCHAR, VARCHAR) RETURNS VOID AS $$
 DECLARE
@@ -295,21 +335,19 @@ LANGUAGE 'plpgsql';
 --select * from tarifa where current_date < fechafin;  TARIFAS DEL ANHO VIGENTE
 
 
-CREATE OR REPLACE FUNCTION mitarifa (time) RETURNS INTEGER AS $$
+CREATE OR REPLACE FUNCTION mitarifa (time with time zone) RETURNS INTEGER AS $$
 DECLARE
 time ALIAS FOR $1;
 id INTEGER;
 BEGIN
 IF time >= '06:00:00' and time <= '17:59:59' THEN
-       id := (select id_tarifa from tarifa natural join horario where current_date < fechafin and (time<=horafin and time>=horainicio)) ;
+       id := (select id_tarifa from tarifa natural join horario where (fechafin is null) and (time<=horafin and time>=horainicio)) ;
 ELSE
-       id := (select id_tarifa from tarifa natural join horario where current_date < fechafin and (current_time >= '18:00:00' and horafin <= '05:59:59'));
+       id := (select id_tarifa from tarifa natural join horario where (fechafin is null) and (current_time >= '18:00:00' and horafin <= '05:59:59'));
 END IF;
        RETURN id;
 END; $$ 
 LANGUAGE 'plpgsql';
 
-
-
-
+CREATE OR REPLACE VIEW lastarifas AS select * from tarifa natural join horario;
 
