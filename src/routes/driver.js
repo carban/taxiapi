@@ -178,4 +178,36 @@ Router.post('/api/profile/delete-car', async (req, res) => {
     })
 });
 
+Router.post('/api/driver/my-services', async (req, res) => {
+  const {phone} = req.body;
+  //console.log(phone);
+  const myquery = {
+    text: 'select * from servicio where telefonoconductor=$1',
+    values: [phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.json(dbres);
+    })
+    .catch(err => {
+       console.log(err);
+    })
+});
+
+Router.post('/api/driver/new-position', async (req, res) => {
+  const {phone, coordenada, taxi} = req.body;
+  console.log(phone, coordenada, taxi);
+  const myquery = {
+    text: 'select insertarVariante($1, $2, $3, $4)',
+    values: [phone, taxi, coordenada[0], coordenada[1]]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.json({msg: "New Variant"});
+    })
+    .catch(err => {
+       console.log(err);
+    })
+});
+
 module.exports = Router;

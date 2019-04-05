@@ -144,6 +144,7 @@ hora time,
 distancia double precision,
 precio double precision, 
 calificacion int,
+s_estado varchar(15),
 
 FOREIGN KEY (telefonoCliente) REFERENCES cliente(telefonoCliente),
 FOREIGN KEY (telefonoConductor) REFERENCES conductor(telefonoConductor),
@@ -226,10 +227,10 @@ INSERT INTO taxiConductor (telefonoConductor, placa) VALUES('123123','che123');-
 
 --Insert into variante_conduce
 --resgistros "viejos":
-INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123','2019/04/01','13:00:59','disponible',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326));
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123','2019/04/01','13:00:59','ocupado',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326));
 --INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada); VALUES ('66666','maz123','2019/04/01','13:00:59','en uso',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326)); No puede usar dos carros al mismo tiempo
-INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123','2019/04/01','14:00:59','disponible',ST_GeomFromText('POINT(3.4446 -76.5208)', 4326));
-INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234','2019/04/01','13:00:59','disponible',ST_GeomFromText('POINT(3.4356 -76.5208)', 4326));
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123','2019/04/01','14:00:59','ocupado',ST_GeomFromText('POINT(3.4446 -76.5208)', 4326));
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234','2019/04/01','13:00:59','ocupado',ST_GeomFromText('POINT(3.4356 -76.5208)', 4326));
 --fecha y hora actual
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('1234','abc123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4123 -76.4941)', 4326));
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4406 -76.5208)', 4326));
@@ -350,4 +351,17 @@ END; $$
 LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE VIEW lastarifas AS select * from tarifa natural join horario;
+
+--3.410375153394436
+---76.47583007812501 
+
+
+CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar, double precision, double precision ) 
+RETURNS void as $$
+BEGIN
+
+UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1;
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ($1,$2,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
+END;
+$$LANGUAGE 'plpgsql';
 

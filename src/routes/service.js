@@ -38,7 +38,7 @@ Router.post('/api/service-notification', async (req, res) => {
   const myquery = {
     //text: 'SELECT first_name, last_name, phone, ST_Distance(ST_SetSRID(ST_MakePoint($1, $2), 4326), coor) AS dists from drivers ORDER BY dists LIMIT 1',
    // text: 'SELECT * FROM distance_between_point_taxis($1, $2)',
-   text: "INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor) VALUES ($1, $2, $3, $4, $5, current_date, current_time, $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326), ST_SetSRID(ST_MakePoint($10, $11), 4326))",
+   text: "INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor, s_estado) VALUES ($1, $2, $3, $4, $5, current_date, current_time, $6, $7, ST_SetSRID(ST_MakePoint($8, $9), 4326), ST_SetSRID(ST_MakePoint($10, $11), 4326), 'nueva')",
    values: [telefonocliente, telefonoconductor, placa, id_tarifa, distancia, precio, calificacion, origen_coor[0], origen_coor[1], destino_coor[0], destino_coor[1]]
   }
   db.query(myquery)
