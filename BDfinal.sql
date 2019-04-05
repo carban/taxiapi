@@ -144,7 +144,6 @@ hora time,
 distancia double precision,
 precio double precision, 
 calificacion int,
-s_estado varchar(15),
 
 FOREIGN KEY (telefonoCliente) REFERENCES cliente(telefonoCliente),
 FOREIGN KEY (telefonoConductor) REFERENCES conductor(telefonoConductor),
@@ -227,10 +226,10 @@ INSERT INTO taxiConductor (telefonoConductor, placa) VALUES('123123','che123');-
 
 --Insert into variante_conduce
 --resgistros "viejos":
-INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123','2019/04/01','13:00:59','ocupado',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326));
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123','2019/04/01','13:00:59','disponible',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326));
 --INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada); VALUES ('66666','maz123','2019/04/01','13:00:59','en uso',ST_GeomFromText('POINT(3.4456 -76.5208)', 4326)); No puede usar dos carros al mismo tiempo
-INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123','2019/04/01','14:00:59','ocupado',ST_GeomFromText('POINT(3.4446 -76.5208)', 4326));
-INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234','2019/04/01','13:00:59','ocupado',ST_GeomFromText('POINT(3.4356 -76.5208)', 4326));
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('10101','kia123','2019/04/01','14:00:59','disponible',ST_GeomFromText('POINT(3.4446 -76.5208)', 4326));
+INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('77711','maz234','2019/04/01','13:00:59','disponible',ST_GeomFromText('POINT(3.4356 -76.5208)', 4326));
 --fecha y hora actual
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('1234','abc123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4123 -76.4941)', 4326));
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ('66666','xyz123',current_date, current_time,'disponible',ST_GeomFromText('POINT(3.4406 -76.5208)', 4326));
@@ -257,15 +256,20 @@ INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3000, '01/0
 */
 
 
+CREATE OR REPLACE VIEW lasTarifas AS --contiene las ultimas tarifas
+SELECT * FROM (SELECT * FROM tarifa WHERE fechaFin IS NULL) AS tarifasVigente NATURAL JOIN horario;
+
 
 /*Triggers y Procedimientos almacenados***************************************/
+
+--FUNCTION ultimaFechaFin
 CREATE OR REPLACE FUNCTION ultimaFechaFin () RETURNS TRIGGER AS
 $$
 DECLARE
 ifechaInicio date;
 
 BEGIN
---ultima fechaInicio: 
+--ifechaInicio = ultima fechaInicio: 
 SELECT fechaInicio INTO ifechaInicio FROM tarifa WHERE jornada= new.jornada ORDER BY id_tarifa DESC LIMIT 1;
 
      IF(ifechaInicio < new.fechaInicio) THEN
@@ -281,14 +285,12 @@ LANGUAGE 'plpgsql';
 
 DROP TRIGGER IF EXISTS updateFechaFin ON tarifa;
 
+--TRIGGER updateFechaFin
 CREATE TRIGGER updateFechaFin BEFORE INSERT ON tarifa
 FOR EACH ROW EXECUTE PROCEDURE ultimaFechaFin();
 
--- INSERSIONES QUE HACEN USO DEL TRIGGER
-INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1000, '01/01/2019');
-INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2000, '01/01/2019');
-INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3000, '01/01/2019');
 
+--FUNCTION insertarTaxiConductor
 CREATE OR REPLACE FUNCTION insertarTaxiConductor (VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) RETURNS VOID AS 
 $$
 DECLARE
@@ -305,7 +307,7 @@ model VARCHAR;
 BEGIN
 
 SELECT id_carro, marca, modelo INTO idcar, mark, model FROM infocarro WHERE marca = imarca and modelo = imodelo;
-
+--Si id_carro no existe se crea en infoCarro 
 IF (idcar is null) THEN
        INSERT INTO infoCarro (marca, modelo) VALUES (imarca,imodelo);
        SELECT id_carro INTO idcar FROM infocarro WHERE marca = imarca and modelo = imodelo;
@@ -322,46 +324,48 @@ $$
 LANGUAGE 'plpgsql';
 
 
-
+--FUNCTION borrarTaxi
 CREATE OR REPLACE FUNCTION borrarTaxi (VARCHAR, VARCHAR) RETURNS VOID AS $$
 DECLARE
 itelefonoconductor ALIAS FOR $1;
 iplaca ALIAS FOR $2;
 BEGIN
 DELETE FROM taxiconductor WHERE placa = iplaca and telefonoconductor = itelefonoconductor;
-/*SE BORRA EL TAXI DE LA TABLA TAXI??????????????*/
+/**/
 END; $$ 
 LANGUAGE 'plpgsql';
 
---select * from tarifa where current_date < fechafin;  TARIFAS DEL ANHO VIGENTE
 
-
-CREATE OR REPLACE FUNCTION mitarifa (time with time zone) RETURNS INTEGER AS $$
+--FUNCTION mitarifa
+CREATE OR REPLACE FUNCTION miTarifa (time with time zone) RETURNS INTEGER AS $$
 DECLARE
 time ALIAS FOR $1;
 id INTEGER;
 BEGIN
-IF time >= '06:00:00' and time <= '17:59:59' THEN
-       id := (select id_tarifa from tarifa natural join horario where (fechafin is null) and (time<=horafin and time>=horainicio)) ;
-ELSE
-       id := (select id_tarifa from tarifa natural join horario where (fechafin is null) and (current_time >= '18:00:00' and horafin <= '05:59:59'));
+IF time >= '04:00:00' AND time <= '11:59:59' THEN 
+     id := (SELECT id_tarifa FROM lasTarifas WHERE jornada='manhana';
+
+ELSIF time >= '12:00:00' AND time <= '19:59:59' THEN 
+      id := (SELECT id_tarifa FROM lasTarifas WHERE jornada='tarde';
+
+ELSE -- time >= 20:00:00 ...
+     id := (SELECT id_tarifa FROM lasTarifas WHERE jornada='noche';
+
 END IF;
        RETURN id;
 END; $$ 
 LANGUAGE 'plpgsql';
 
-CREATE OR REPLACE VIEW lastarifas AS select * from tarifa natural join horario;
 
---3.410375153394436
----76.47583007812501 
-
-
-CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar, double precision, double precision ) 
-RETURNS void as $$
+--FUNCTION insertarVariante
+CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar, double precision, double precision ) RETURNS void as 
+$$
 BEGIN
-
 UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1;
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ($1,$2,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
 END;
-$$LANGUAGE 'plpgsql';
+$$
+LANGUAGE 'plpgsql';
+
+
 
