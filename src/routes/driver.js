@@ -182,12 +182,16 @@ Router.post('/api/driver/my-services', async (req, res) => {
   const {phone} = req.body;
   //console.log(phone);
   const myquery = {
-    text: 'select * from servicio where telefonoconductor=$1',
+    text: 'select id_servicio, telefonocliente, telefonoconductor, placa, id_tarifa, distancia, precio, calificacion, s_estado, (select ST_AsGeoJSON(origen_coor)::json) as origen_geom, (select ST_AsGeoJSON(destino_coor)::json) as destino_geom from servicio where telefonoconductor=$1',
     values: [phone]
   }
   await db.query(myquery)
     .then(dbres => {
-      res.json(dbres);
+      if (dbres.rows.length == 0) {
+        res.json({msg: 'No services'});
+      }else{
+        res.json(dbres);
+      }
     })
     .catch(err => {
        console.log(err);

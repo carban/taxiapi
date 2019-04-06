@@ -336,21 +336,28 @@ LANGUAGE 'plpgsql';
 --select * from tarifa where current_date < fechafin;  TARIFAS DEL ANHO VIGENTE
 
 
+--FUNCTION mitarifa
 CREATE OR REPLACE FUNCTION mitarifa (time with time zone) RETURNS INTEGER AS $$
 DECLARE
 time ALIAS FOR $1;
 id INTEGER;
 BEGIN
-IF time >= '06:00:00' and time <= '17:59:59' THEN
-       id := (select id_tarifa from tarifa natural join horario where (fechafin is null) and (time<=horafin and time>=horainicio)) ;
-ELSE
-       id := (select id_tarifa from tarifa natural join horario where (fechafin is null) and (current_time >= '18:00:00' and horafin <= '05:59:59'));
+IF time >= '04:00:00' AND time <= '11:59:59' THEN 
+     id := (SELECT id_tarifa FROM lasTarifas WHERE jornada='manhana');
+
+ELSIF time >= '12:00:00' AND time <= '19:59:59' THEN 
+      id := (SELECT id_tarifa FROM lasTarifas WHERE jornada='tarde');
+
+ELSE -- time >= 20:00:00 ...
+     id := (SELECT id_tarifa FROM lasTarifas WHERE jornada='noche');
+
 END IF;
        RETURN id;
 END; $$ 
 LANGUAGE 'plpgsql';
 
-CREATE OR REPLACE VIEW lastarifas AS select * from tarifa natural join horario;
+CREATE OR REPLACE VIEW lasTarifas AS --contiene las ultimas tarifas
+SELECT * FROM (SELECT * FROM tarifa WHERE fechaFin IS NULL) AS tarifasVigente NATURAL JOIN horario;
 
 --3.410375153394436
 ---76.47583007812501 
@@ -364,4 +371,3 @@ UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1;
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ($1,$2,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
 END;
 $$LANGUAGE 'plpgsql';
-
