@@ -182,7 +182,7 @@ Router.post('/api/driver/my-services', async (req, res) => {
   const {phone} = req.body;
   //console.log(phone);
   const myquery = {
-    text: 'select id_servicio, telefonocliente, telefonoconductor, placa, id_tarifa, distancia, precio, calificacion, s_estado, (select ST_AsGeoJSON(origen_coor)::json) as origen_geom, (select ST_AsGeoJSON(destino_coor)::json) as destino_geom from servicio where telefonoconductor=$1',
+    text: "select id_servicio, telefonocliente, telefonoconductor, placa, id_tarifa, distancia, precio, calificacion, s_estado, (select ST_AsGeoJSON(origen_coor)::json) as origen_geom, (select ST_AsGeoJSON(destino_coor)::json) as destino_geom from servicio where telefonoconductor=$1 and s_estado='nueva' order by id_servicio desc limit 1",
     values: [phone]
   }
   await db.query(myquery)
@@ -192,6 +192,22 @@ Router.post('/api/driver/my-services', async (req, res) => {
       }else{
         res.json(dbres);
       }
+    })
+    .catch(err => {
+       console.log(err);
+    })
+});
+
+Router.post('/api/driver/ok-service', async (req, res) => {
+  const {phone} = req.body;
+  //console.log(phone);
+  const myquery = {
+    text: "update servicio set s_estado='vieja' where telefonoconductor=$1",
+    values: [phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.json({msg: 'Accepted'});
     })
     .catch(err => {
        console.log(err);

@@ -363,11 +363,55 @@ SELECT * FROM (SELECT * FROM tarifa WHERE fechaFin IS NULL) AS tarifasVigente NA
 ---76.47583007812501 
 
 
-CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar, double precision, double precision ) 
+/*CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar, double precision, double precision ) 
 RETURNS void as $$
 BEGIN
 
 UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1;
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ($1,$2,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
+END;
+$$LANGUAGE 'plpgsql';*/
+CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar,date,time , double precision, double precision) 
+RETURNS varchar as $$
+DECLARE 
+tel varchar;
+plate varchar;
+state varchar;
+telbien varchar;
+
+BEGIN
+select telefonoconductor into tel from conductor where telefonoconductor=$1;
+select placa into plate from taxi where placa=$2;
+IF (tel is not null and plate is not null ) THEN
+
+	select estado into state from variante_conduce where placa=$2;
+	select  telefonoconductor into telbien from variante_conduce where placa=$2;
+
+	IF(telbien!=$1)THEN --ENTRA ACA SI EL TELEFONO ES DIFERENTE AL QUE ESTA ALMACENADO CON LA MISMA PLACA QUE INGRESA
+		IF(state = 'disponible' or state = 'ocupado') THEN RETURN 'La placa esta siendo ucupada';
+		ELSE
+			UPDATE  variante_conduce set estado = 'libre' where telefonoconductor = $1 
+			and id_conduce = (select id_conduce from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor from 
+			variante_conduce where telefonoconductor = $1 group by placa,fecha,id_conduce,telefonoconductor) as x
+			order by id_conduce DESC LIMIT 1);
+	--
+			INSERT INTO variante_conduce(telefonoconductor,placa,fecha,hora,estado,coordenada) VALUES(tel,plate,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
+			RETURN telbien;
+		END IF;	 
+		
+	ELSE --SI LA PLACA ES IGUAL ENTRA ACA
+		
+		UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1 
+		and id_conduce = (select id_conduce from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor from 
+		variante_conduce where telefonoconductor = $1 group by placa,fecha,id_conduce,telefonoconductor) as x
+		order by id_conduce DESC LIMIT 1);
+	--
+		INSERT INTO variante_conduce(telefonoconductor,placa,fecha,hora,estado,coordenada) VALUES(tel,plate,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
+		RETURN 'REGISTRO EXITOSOS';
+	END IF;
+	
+	
+ELSE 	RETURN 'NO EXISTE TELEFONO O PLACA DEL CONDUCTOR';
+END IF;
 END;
 $$LANGUAGE 'plpgsql';
