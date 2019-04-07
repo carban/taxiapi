@@ -371,21 +371,31 @@ UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1;
 INSERT INTO variante_conduce (telefonoConductor, placa, fecha, hora, estado, coordenada) VALUES ($1,$2,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
 END;
 $$LANGUAGE 'plpgsql';*/
-CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar,date,time , double precision, double precision) 
+CREATE OR REPLACE FUNCTION insertarVariante(varchar,varchar, double precision, double precision) 
 RETURNS varchar as $$
 DECLARE 
 tel varchar;
 plate varchar;
 state varchar;
 telbien varchar;
+plate2 varchar;
 
 BEGIN
 select telefonoconductor into tel from conductor where telefonoconductor=$1;
 select placa into plate from taxi where placa=$2;
 IF (tel is not null and plate is not null ) THEN
 
-	select estado into state from variante_conduce where placa=$2;
-	select  telefonoconductor into telbien from variante_conduce where placa=$2;
+--Me trae la placa del ultimo registro con el telefono que se ingreso
+select placa into plate2 from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor,estado from 
+			variante_conduce where telefonoconductor= $1 group by placa,fecha,id_conduce,telefonoconductor) as x
+			order by id_conduce DESC LIMIT 1;
+--Me trae estado y tel del ultimo registro con la placa que se ingresa
+select estado,telefonoconductor into state,telbien from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor,estado from 
+			variante_conduce where placa= $2 group by placa,fecha,id_conduce,telefonoconductor) as x
+			order by id_conduce DESC LIMIT 1;
+			
+	--select  telefonoconductor into telbien from variante_conduce where placa=$2;
+	--select placa into plate2 from variante_conduce where telefonoconductor=$1;
 
 	IF(telbien!=$1)THEN --ENTRA ACA SI EL TELEFONO ES DIFERENTE AL QUE ESTA ALMACENADO CON LA MISMA PLACA QUE INGRESA
 		IF(state = 'disponible' or state = 'ocupado') THEN RETURN 'La placa esta siendo ucupada';
@@ -396,18 +406,30 @@ IF (tel is not null and plate is not null ) THEN
 			order by id_conduce DESC LIMIT 1);
 	--
 			INSERT INTO variante_conduce(telefonoconductor,placa,fecha,hora,estado,coordenada) VALUES(tel,plate,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
-			RETURN telbien;
+			RETURN 'Regisrto Exitoso';
 		END IF;	 
 		
-	ELSE --SI LA PLACA ES IGUAL ENTRA ACA
+	ELSE --SI EL TELEFONO ES IGUAL ENTRA ACA
 		
-		UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1 
-		and id_conduce = (select id_conduce from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor from 
-		variante_conduce where telefonoconductor = $1 group by placa,fecha,id_conduce,telefonoconductor) as x
-		order by id_conduce DESC LIMIT 1);
+		IF(plate2!=$2)THEN --SI LA PLACA ES DIFERENTE A LA QUE YA TENIA
+				
+			UPDATE  variante_conduce set estado = 'libre' where telefonoconductor = $1 
+			and id_conduce = (select id_conduce from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor from 
+			variante_conduce where telefonoconductor = $1 group by placa,fecha,id_conduce,telefonoconductor) as x
+			order by id_conduce DESC LIMIT 1);
+			INSERT INTO variante_conduce(telefonoconductor,placa,fecha,hora,estado,coordenada) VALUES(tel,plate,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
+			RETURN 'REGISTRO EXITOSO';
+
+---------------------------
+		ELSE --SI LA PLACA ES LA MISMA
+			UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1 
+			and id_conduce = (select id_conduce from (select min(id_conduce),placa,fecha,id_conduce,telefonoconductor from 
+			variante_conduce where telefonoconductor = $1 group by placa,fecha,id_conduce,telefonoconductor) as x
+			order by id_conduce DESC LIMIT 1);
 	--
-		INSERT INTO variante_conduce(telefonoconductor,placa,fecha,hora,estado,coordenada) VALUES(tel,plate,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
-		RETURN 'REGISTRO EXITOSOS';
+			INSERT INTO variante_conduce(telefonoconductor,placa,fecha,hora,estado,coordenada) VALUES(tel,plate,current_date,current_time,'disponible',ST_SetSRID(ST_MakePoint($3, $4), 4326));
+			RETURN 'REGISTRO EXITOSO3';
+		END IF;
 	END IF;
 	
 	
