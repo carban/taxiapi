@@ -32,7 +32,7 @@ emailCliente varchar NOT NULL,
 tarjetaCliente varchar NOT NULL,
 passwordCliente varchar NOT NULL,
 direccionCliente varchar NOT NULL,
-
+imagenCliente varchar(200),
 PRIMARY KEY (telefonoCliente)
 );
 
@@ -57,7 +57,7 @@ emailConductor varchar NOT NULL,
 tarjetaConductor varchar NOT NULL,
 passwordConductor varchar NOT NULL,
 direccionConductor varchar NOT NULL,
-
+imagenConductor varchar(200),
 PRIMARY KEY (telefonoConductor)
 );
 
@@ -161,8 +161,8 @@ SELECT AddGeometryColumn('servicio', 'destino_coor', 4326, 'POINT', 2);
 --Insert into cliente
 INSERT INTO cliente (telefonoCliente, nombreCliente, apellidoCliente, emailCliente, tarjetaCliente, passwordCliente, direccionCliente)
 VALUES ('1234','nombre','apellido','mail@mail.com','111111', '1234', 'unaDireccion');
-INSERT INTO cliente VALUES('76543','charles', 'xavier','charles@xavier.com', '10021','there', 'mansion X');
-INSERT INTO cliente VALUES('88991','Luka','Modric','luka@modric.com','10023','leon', 'dondeModric viva');
+INSERT INTO cliente (telefonoCliente, nombreCliente, apellidoCliente, emailCliente, tarjetaCliente, passwordCliente, direccionCliente) VALUES('76543','charles', 'xavier','charles@xavier.com', '10021','there', 'mansion X');
+INSERT INTO cliente (telefonoCliente, nombreCliente, apellidoCliente, emailCliente, tarjetaCliente, passwordCliente, direccionCliente, imagenCliente) VALUES('88991','Luka','Modric','luka@modric.com','10023','leon', 'dondeModric viva', 'https://files.laliga.es/player-photo/6/15/79/256x256_007487_000005_049_1_002_000_000.jpg');
 
 
 --Insert into favorito
@@ -180,10 +180,10 @@ INSERT INTO favorito (telefonoCliente, titulo, direccion, coordenada) VALUES (88
 --Insert into conductor
 INSERT INTO conductor (telefonoConductor, nombreConductor, apellidoConductor, emailConductor, tarjetaConductor, passwordConductor, direccionConductor)
 VALUES ('1234','nombre','apellido','mail@mail.com','111111', '1234', 'unaDireccion');
-INSERT INTO conductor VALUES ('66666','Quentin','Tarantino','quentin@tarantino.com','123456','pulp123','unaDireccion');
-INSERT INTO conductor VALUES ('10101','Alejandro', 'González I.','mail@mail.com','654321','21grams','unaDireccion');
-INSERT INTO conductor VALUES ('77711','Lars','Von Trier', 'von@trier.com','67890','dogville','unaDireccion');
-INSERT INTO conductor VALUES ('123123','Martin','Scorsese', 'martin@scoces.com','666899','123','unaDireccion');
+INSERT INTO conductor (telefonoConductor, nombreConductor, apellidoConductor, emailConductor, tarjetaConductor, passwordConductor, direccionConductor, imagenConductor) VALUES ('66666','Quentin','Tarantino','quentin@tarantino.com','123456','pulp123','unaDireccion', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyEqCI1EATNzLknEcOCMKaMfBl1s-8s39VZouB2lEKM9HR19IL');
+INSERT INTO conductor (telefonoConductor, nombreConductor, apellidoConductor, emailConductor, tarjetaConductor, passwordConductor, direccionConductor) VALUES ('10101','Alejandro', 'González I.','mail@mail.com','654321','21grams','unaDireccion');
+INSERT INTO conductor (telefonoConductor, nombreConductor, apellidoConductor, emailConductor, tarjetaConductor, passwordConductor, direccionConductor) VALUES ('77711','Lars','Von Trier', 'von@trier.com','67890','dogville','unaDireccion');
+INSERT INTO conductor (telefonoConductor, nombreConductor, apellidoConductor, emailConductor, tarjetaConductor, passwordConductor, direccionConductor) VALUES ('123123','Martin','Scorsese', 'martin@scoces.com','666899','123','unaDireccion');
 
 
 --Insert into infoCarro

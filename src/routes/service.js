@@ -43,7 +43,7 @@ Router.post('/api/service-notification', async (req, res) => {
   }
   db.query(myquery)
     .then(dbres => {
-      console.log("Service Inserted");
+      res.json({msg: "Service Inserted"});
     })
     .catch(err => {
        console.log(err);

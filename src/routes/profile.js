@@ -11,7 +11,7 @@ Router.post('/api/profile', async (req, res) => {
   const {phone} = req.body;
   //'
   const myquery = {
-    text: 'SELECT * FROM cliente WHERE telefonocliente=$1',
+    text: 'SELECT telefonocliente, nombrecliente, apellidocliente, emailcliente, tarjetacliente, direccioncliente, imagencliente FROM cliente WHERE telefonocliente=$1',
     values: [phone]
   }
   const travelsInfo = {

@@ -103,7 +103,7 @@ Router.post('/api/driver/login', async (req, res) => {
 Router.post('/api/driver/profile', async (req, res) => {
   const {phone} = req.body;
   const myquery = {
-    text: 'SELECT * FROM conductor WHERE telefonoconductor=$1',
+    text: 'SELECT telefonoconductor, nombreconductor, apellidoconductor, emailconductor, tarjetaconductor, direccionconductor, imagenconductor FROM conductor WHERE telefonoconductor=$1',
     values: [phone]
   }
   const travelsInfo = {
