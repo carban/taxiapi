@@ -244,7 +244,6 @@ INSERT INTO horario (jornada, horainicio, horafin) VALUES ('manhana', '04:00:00'
 INSERT INTO horario (jornada, horainicio, horafin) VALUES ('tarde', '12:00:00', '19:59:59');
 INSERT INTO horario (jornada, horainicio, horafin) VALUES ('noche', '20:00:00', '03:59:59');
 
-
 --Insert into tarifa --id_tarifa es auto incrementado (no se pasa como parametro)
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1500, '01/01/2018'); --fechaFin es calculada con una nueva tupla de misma jornada
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2500, '01/01/2018');
@@ -255,8 +254,6 @@ INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1000, '01
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2000, '01/01/2019');
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3000, '01/01/2019');
 */
-
-
 
 /*Triggers y Procedimientos almacenados***************************************/
 CREATE OR REPLACE FUNCTION ultimaFechaFin () RETURNS TRIGGER AS
@@ -288,6 +285,19 @@ FOR EACH ROW EXECUTE PROCEDURE ultimaFechaFin();
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('manhana', 1000, '01/01/2019');
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('tarde', 2000, '01/01/2019');
 INSERT INTO tarifa (jornada, precioKm, fechaInicio) VALUES ('noche', 3000, '01/01/2019');
+
+
+--Insert into Servicio
+INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor, s_estado) VALUES (88991, 66666, 'xyz123', 903, 13.3, current_date, current_time, 13300, 5, ST_SetSRID(ST_MakePoint(3.4673754847179863, -76.50398254394533), 4326), ST_SetSRID(ST_MakePoint(3.392151122892014, -76.50878906250001), 4326), 'vieja');
+
+INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor, s_estado) VALUES (88991, 66666, 'che123', 903, 10.0, current_date, current_time, 10000, 4, ST_SetSRID(ST_MakePoint(3.4673754847179863, -76.50398254394533), 4326), ST_SetSRID(ST_MakePoint(3.392151122892014, -76.50878906250001), 4326), 'vieja');
+
+INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor, s_estado) VALUES (76543, 66666, 'che123', 903, 17.0, current_date, current_time, 17000, 4, ST_SetSRID(ST_MakePoint(3.4673754847179863, -76.50398254394533), 4326), ST_SetSRID(ST_MakePoint(3.392151122892014, -76.50878906250001), 4326), 'vieja');
+
+INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor, s_estado) VALUES (88991, 66666, 'che123', 904, 11.5, current_date, current_time, 23000, 5, ST_SetSRID(ST_MakePoint(3.4673754847179863, -76.50398254394533), 4326), ST_SetSRID(ST_MakePoint(3.392151122892014, -76.50878906250001), 4326), 'vieja');
+
+INSERT INTO servicio (telefonocliente, telefonoconductor, placa, id_tarifa, distancia, fecha, hora, precio, calificacion, origen_coor, destino_coor, s_estado) VALUES (88991, 66666, 'che123', 904, 11.5, current_date, current_time, 23000, 2, ST_SetSRID(ST_MakePoint(3.4673754847179863, -76.50398254394533), 4326), ST_SetSRID(ST_MakePoint(3.392151122892014, -76.50878906250001), 4326), 'vieja');                 
+
 
 CREATE OR REPLACE FUNCTION insertarTaxiConductor (VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) RETURNS VOID AS 
 $$
@@ -437,3 +447,25 @@ ELSE 	RETURN 'NO EXISTE TELEFONO O PLACA DEL CONDUCTOR';
 END IF;
 END;
 $$LANGUAGE 'plpgsql';
+
+
+
+CREATE OR REPLACE FUNCTION consultarViajesyDistancia(varchar) 
+RETURNS TABLE(kms double precision, viajes integer) as $$
+BEGIN
+
+RETURN QUERY select * from (select sum(servicio.distancia) kms from servicio where telefonocliente = $1) as foo, (select cast(count(servicio.id_servicio) as integer) viajes from servicio where telefonocliente = $1) as goo;
+END;
+$$LANGUAGE 'plpgsql';
+
+
+
+CREATE OR REPLACE FUNCTION consultarViajesCond(varchar) 
+RETURNS TABLE(kms double precision, viajes integer, dinero integer, promedio double precision) as $$
+BEGIN
+
+RETURN QUERY select * from (select sum(servicio.distancia) kms from servicio where telefonoconductor = $1) as foo, (select cast(count(servicio.id_servicio) as integer) viajes from servicio where telefonoconductor = $1) as goo, (select cast(sum(servicio.precio) as integer) dinero from servicio where telefonoconductor = $1) as hoo, (select cast(AVG(calificacion) as double precision) promedio_cal from servicio where telefonoconductor= $1) as ioo;
+END;
+$$LANGUAGE 'plpgsql';
+
+

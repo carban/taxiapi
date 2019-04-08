@@ -9,13 +9,24 @@ Router.use(cors());
 
 Router.post('/api/profile', async (req, res) => {
   const {phone} = req.body;
+  //'
   const myquery = {
     text: 'SELECT * FROM cliente WHERE telefonocliente=$1',
     values: [phone]
   }
+  const travelsInfo = {
+    text: 'SELECT * FROM consultarViajesyDistancia($1)',
+    values: [phone]
+  }
   await db.query(myquery)
-    .then(dbres => {
-      res.json(dbres.rows[0]);
+    .then(prof => {
+      db.query(travelsInfo)
+        .then(travels => {
+          res.json({'profileInfo':prof.rows[0], 'travelsInfo': travels.rows[0]});
+        })
+        .catch(err => {
+
+        })
     })
     .catch(err => {
 

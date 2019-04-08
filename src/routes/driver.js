@@ -106,9 +106,19 @@ Router.post('/api/driver/profile', async (req, res) => {
     text: 'SELECT * FROM conductor WHERE telefonoconductor=$1',
     values: [phone]
   }
+  const travelsInfo = {
+    text: 'SELECT * FROM consultarviajescond($1)',
+    values: [phone]
+  }
   await db.query(myquery)
-    .then(dbres => {
-      res.json(dbres.rows[0]);
+    .then(prof => {
+      db.query(travelsInfo)
+        .then(travels => {
+          res.json({'profileInfo':prof.rows[0], 'travelsInfo': travels.rows[0]});
+        })
+        .catch(err => {
+
+        })
     })
     .catch(err => {
 
@@ -229,5 +239,24 @@ Router.post('/api/driver/new-position', async (req, res) => {
        console.log(err);
     })
 });
+
+Router.post('/api/driver/busy-position', async (req, res) => {
+  const {phone} = req.body;
+  const myquery = {
+    text: "UPDATE  variante_conduce set estado = 'ocupado' where telefonoconductor = $1",
+    values: [phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.json({msg: "Busy Variant"});
+    })
+    .catch(err => {
+       console.log(err);
+    })
+});
+
+
+
+
 
 module.exports = Router;
