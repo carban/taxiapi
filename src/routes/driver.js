@@ -141,6 +141,22 @@ Router.post('/api/driver/update-profile', async (req, res) => {
     })
 });
 
+Router.post('/api/driver/change-password', async (req, res) => {
+  const {phone, pass} = req.body;
+  console.log(phone, pass);
+  const myquery = {
+    text: 'UPDATE conductor SET passwordconductor=$1 WHERE telefonoconductor=$2',
+    values: [pass, phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.status(200).json('password changed');
+    })
+    .catch(err => {
+      console.log(err);
+    })
+});
+
 Router.post('/api/driver/cars', async (req, res) => {
   const {phone} = req.body;
   const myquery = {

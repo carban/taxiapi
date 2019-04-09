@@ -110,4 +110,19 @@ Router.post('/api/profile/update-favorite', async (req, res) => {
     })
 });
 
+Router.post('/api/change-password', async (req, res) => {
+  const {phone, pass} = req.body;
+  const myquery = {
+    text: 'UPDATE cliente SET passwordcliente=$1 WHERE telefonocliente=$2',
+    values: [pass, phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.status(200).json('password changed');
+    })
+    .catch(err => {
+      console.log(err);
+    })
+});
+
 module.exports = Router;

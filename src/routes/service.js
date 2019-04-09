@@ -17,13 +17,24 @@ Router.post('/api/near-taxi', async (req, res) => {
   }
   db.query(myquery)
     .then(near => {
-      db.query(latarifa)
-        .then(rateCost => {
-          //console.log({'theNear': near.rows, 'theRateCost': rateCost.rows});
-          res.json({'theNear': near.rows, 'theRateCost': rateCost.rows});
+      var phonedri = near.rows[0].telefonoconductor;
+      const prom = {
+        text: "select AVG(calificacion) promedio_cal from servicio where telefonoconductor= $1",
+        values: [phonedri]
+      }
+      db.query(prom)
+        .then(promcal => {
+          db.query(latarifa)
+            .then(rateCost => {
+              //console.log({'theNear': near.rows, 'theRateCost': rateCost.rows, 'prom': promcal.rows});
+              res.json({'theNear': near.rows, 'theRateCost': rateCost.rows, 'prom': promcal.rows});
+            })
+            .catch(err => {
+               console.log(err);
+            })
         })
         .catch(err => {
-           console.log(err);
+          console.log(err);
         })
     })
     .catch(err => {
@@ -44,6 +55,24 @@ Router.post('/api/service-notification', async (req, res) => {
   db.query(myquery)
     .then(dbres => {
       res.json({msg: "Service Inserted"});
+    })
+    .catch(err => {
+       console.log(err);
+    })
+});
+
+
+Router.post('/api/service-calification', async (req, res) => {
+
+  const {phonecli, phonedri, cali} = req.body;
+  console.log(phonecli, phonedri, cali.cal);
+  const myquery = {
+    text: "update servicio set calificacion = $1 where telefonoconductor = $2 and telefonocliente=$3 and id_servicio = (select max(id_servicio) from servicio group by id_servicio order by id_servicio desc limit 1);",
+    values: [cali.cal, phonedri, phonecli]
+  }
+  db.query(myquery)
+    .then(dbres => {
+      res.json({msg: "calcification successfully"});
     })
     .catch(err => {
        console.log(err);
