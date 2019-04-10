@@ -177,8 +177,8 @@ Router.post('/api/driver/new-car', async (req, res) => {
   const phone = req.body.phone;
   const {plate, brand, model, soat, year} = req.body.carInfo;
   const myquery = {
-    text: 'SELECT * FROM insertartaxi($1, $2, $3, $4, $5, $6)',
-    values: [phone, plate, brand, model, soat, year]
+    text: 'SELECT * FROM insertartaxiConductor($1, $2, $3, $4, $5, $6)',
+    values: [phone, plate, soat, year, brand, model]
   }
   await db.query(myquery)
     .then(dbres => {
@@ -211,18 +211,53 @@ Router.post('/api/driver/my-services', async (req, res) => {
     text: "select id_servicio, telefonocliente, telefonoconductor, placa, id_tarifa, distancia, precio, calificacion, s_estado, (select ST_AsGeoJSON(origen_coor)::json) as origen_geom, (select ST_AsGeoJSON(destino_coor)::json) as destino_geom from servicio where telefonoconductor=$1 and s_estado='nueva' order by id_servicio desc limit 1",
     values: [phone]
   }
+
   await db.query(myquery)
     .then(dbres => {
       if (dbres.rows.length == 0) {
         res.json({msg: 'No services'});
       }else{
-        res.json(dbres);
+        var phonecli = dbres.rows[0].telefonocliente;
+        const clinfo = {
+          text: "select nombrecliente, apellidocliente, telefonocliente from cliente where telefonocliente = $1;",
+          values: [phonecli]
+        }
+        db.query(clinfo)
+          .then(respu => {
+            // console.log({all:dbres.rows, cli:respu.rows});
+            res.json({all:dbres.rows, cli:respu.rows});
+          })
+          .catch(err => {
+            console.log(err);
+          })
       }
     })
     .catch(err => {
        console.log(err);
     })
 });
+
+
+// Router.post('/api/driver/my-services', async (req, res) => {
+//   const {phone} = req.body;
+//   //console.log(phone);
+//   const myquery = {
+//     text: "select id_servicio, telefonocliente, telefonoconductor, placa, id_tarifa, distancia, precio, calificacion, s_estado, (select ST_AsGeoJSON(origen_coor)::json) as origen_geom, (select ST_AsGeoJSON(destino_coor)::json) as destino_geom from servicio where telefonoconductor=$1 and s_estado='nueva' order by id_servicio desc limit 1",
+//     values: [phone]
+//   }
+//
+//   await db.query(myquery)
+//     .then(dbres => {
+//       if (dbres.rows.length == 0) {
+//         res.json({msg: 'No services'});
+//       }else{
+//         res.json(dbres);
+//       }
+//     })
+//     .catch(err => {
+//        console.log(err);
+//     })
+// });
 
 Router.post('/api/driver/ok-service', async (req, res) => {
   const {phone} = req.body;
@@ -272,7 +307,20 @@ Router.post('/api/driver/busy-position', async (req, res) => {
 });
 
 
-
+Router.post('/api/driver/change-pic', async (req, res) => {
+  const {phone, pic} = req.body;
+  const myquery = {
+    text: 'UPDATE conductor SET imagenconductor=$1 WHERE telefonoconductor=$2',
+    values: [pic, phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.status(200).json('picture changed');
+    })
+    .catch(err => {
+      console.log(err);
+    })
+});
 
 
 module.exports = Router;

@@ -125,4 +125,19 @@ Router.post('/api/change-password', async (req, res) => {
     })
 });
 
+Router.post('/api/change-pic', async (req, res) => {
+  const {phone, pic} = req.body;
+  const myquery = {
+    text: 'UPDATE cliente SET imagencliente=$1 WHERE telefonocliente=$2',
+    values: [pic, phone]
+  }
+  await db.query(myquery)
+    .then(dbres => {
+      res.status(200).json('picture changed');
+    })
+    .catch(err => {
+      console.log(err);
+    })
+});
+
 module.exports = Router;
