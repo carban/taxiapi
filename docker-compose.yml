@@ -1,0 +1,30 @@
+version: '3.7'
+services:
+
+  api:
+    image: andresma/api-bd:version2
+    ports:
+     - "8000:8000"
+
+    command: "sh inittodo.sh"
+
+
+  cliente:
+    image: andresma/cliente-taxi:version3
+    ports:
+     - "8080:8080"
+    
+    links:
+     - api
+
+  conductor:
+    image: andresma/conductor-taxi:version3
+    ports:
+     - "8081:8081"
+    
+    links:
+     - api
+    
+
+ 
+
