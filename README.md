@@ -16,6 +16,7 @@ se puede ver lo que imprimen cada imagen mientras se monta el contenedor
 Notará que los contenedores de las aplicaciones del cliente y conductor son los primeros en crear dado que su construcción es rápida y por eso puede verlas escribiendo en su navegador (recomendamos usar firefox) lo siguiente:
 -    **localhost:8080 para el cliente**
 -    **localhost:8081 para el conductor**
+
 Pero como el contenedor de la api es un poco más lento en terminar de hacerse, tendrá que esperar a que finalice su elaboración para poder usar las aplicaciones en conjunto con la api y la base de datos.
 
 Aquí se puede ver como el contenedor de la api terminó y está a la escucha en el puerto 8000, lo que significa que todo funcionara bien
